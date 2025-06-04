@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Free AI Text Rewriter (Browser Only)</title>
+</head>
+<body>
+  <h1>AI Text Rewriter - Free & No Signup</h1>
+  <textarea id="input" rows="10" cols="80" placeholder="Paste your AI-generated text here..."></textarea><br /><br />
+  <button onclick="rewriteText()">Rewrite Text</button>
+  <pre id="output" style="white-space: pre-wrap; margin-top: 20px; border: 1px solid #ccc; padding: 10px;"></pre>
+
+  <script>
+    async function rewriteWithHF(inputText) {
+      const response = await fetch(
+        "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            inputs: `Rewrite this to sound natural, human, and casual:\n${inputText}`,
+            parameters: { max_new_tokens: 200 }
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HF API error: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      if (result.error) throw new Error(result.error);
+
+      // The model returns an array with generated_text
+      return result[0]?.generated_text || "";
+    }
+
+    async function rewriteText() {
+      const inputText = document.getElementById("input").value.trim();
+      if (!inputText) {
+        alert("Please paste some text to rewrite.");
+        return;
+      }
+
+      document.getElementById("output").textContent = "Rewriting... please wait.";
+
+      try {
+        const rewritten = await rewriteWithHF(inputText);
+        document.getElementById("output").textContent = rewritten;
+      } catch (e) {
+        document.getElementById("output").textContent = "Error: " + e.message + "\n\nSometimes the free API is rate limited or busy. Try again in a few minutes.";
+      }
+    }
+  </script>
+</body>
+</html>
