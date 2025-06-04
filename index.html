@@ -2,54 +2,72 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Free AI Text Rewriter (Browser Only)</title>
+  <title>Offline Text Rewriter (No API)</title>
 </head>
 <body>
-  <h1>AI Text Rewriter - Free & No Signup</h1>
-  <textarea id="input" rows="10" cols="80" placeholder="Paste your AI-generated text here..."></textarea><br /><br />
+  <h1>Offline Text Rewriter (No API)</h1>
+  <textarea id="input" rows="10" cols="80" placeholder="Paste text here..."></textarea><br><br>
   <button onclick="rewriteText()">Rewrite Text</button>
   <pre id="output" style="white-space: pre-wrap; margin-top: 20px; border: 1px solid #ccc; padding: 10px;"></pre>
 
   <script>
-    async function rewriteWithHF(inputText) {
-      const response = await fetch(
-        "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            inputs: `Rewrite this to sound natural, human, and casual:\n${inputText}`,
-            parameters: { max_new_tokens: 200 }
-          }),
-        }
-      );
+    // Simple synonym dictionary
+    const synonyms = {
+      "revolutionized": ["changed", "transformed", "altered"],
+      "approach": ["method", "way", "strategy"],
+      "problem-solving": ["trouble-shooting", "finding solutions"],
+      "decision-making": ["choosing", "deciding"],
+      "often": ["frequently", "commonly"],
+      "lacks": ["misses", "doesn't have"],
+      "natural": ["normal", "human-like", "organic"],
+      "flow": ["rhythm", "smoothness"],
+      "nuance": ["subtlety", "detail"],
+      "detectable": ["noticeable", "recognizable"],
+      "rewriting": ["rephrasing", "restating"],
+      "casual": ["relaxed", "informal"],
+      "help": ["assist", "aid"],
+      "bypass": ["avoid", "get around"],
+      "such": ["these kinds of", "those"]
+    };
 
-      if (!response.ok) {
-        throw new Error(`HF API error: ${response.statusText}`);
+    function getRandomSynonym(word) {
+      const lower = word.toLowerCase();
+      if (synonyms[lower]) {
+        const options = synonyms[lower];
+        return options[Math.floor(Math.random() * options.length)];
       }
-
-      const result = await response.json();
-      if (result.error) throw new Error(result.error);
-
-      // The model returns an array with generated_text
-      return result[0]?.generated_text || "";
+      return word;
     }
 
-    async function rewriteText() {
-      const inputText = document.getElementById("input").value.trim();
-      if (!inputText) {
-        alert("Please paste some text to rewrite.");
+    function rewriteText() {
+      const input = document.getElementById("input").value;
+      if (!input.trim()) {
+        alert("Please paste some text.");
         return;
       }
+      // Split input into words
+      const words = input.split(/\b/); // Split but keep punctuation
+      const rewrittenWords = words.map(word => {
+        // Only replace words (skip punctuation and spaces)
+        if (/^\w+$/.test(word)) {
+          // 30% chance to replace word with synonym
+          if (Math.random() < 0.3) {
+            return getRandomSynonym(word);
+          }
+        }
+        return word;
+      });
 
-      document.getElementById("output").textContent = "Rewriting... please wait.";
-
-      try {
-        const rewritten = await rewriteWithHF(inputText);
-        document.getElementById("output").textContent = rewritten;
-      } catch (e) {
-        document.getElementById("output").textContent = "Error: " + e.message + "\n\nSometimes the free API is rate limited or busy. Try again in a few minutes.";
+      // Add random casual filler phrase sometimes
+      let output = rewrittenWords.join("");
+      if (Math.random() < 0.4) {
+        output += " You know?";
       }
+      if (Math.random() < 0.3) {
+        output = "Honestly, " + output;
+      }
+
+      document.getElementById("output").textContent = output;
     }
   </script>
 </body>
