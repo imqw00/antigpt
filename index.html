@@ -2,69 +2,173 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Offline Text Rewriter (No API)</title>
+  <title>Advanced Offline Text Rewriter</title>
 </head>
 <body>
-  <h1>Offline Text Rewriter (No API)</h1>
+  <h1>Advanced Offline Text Rewriter (No API)</h1>
   <textarea id="input" rows="10" cols="80" placeholder="Paste text here..."></textarea><br><br>
   <button onclick="rewriteText()">Rewrite Text</button>
   <pre id="output" style="white-space: pre-wrap; margin-top: 20px; border: 1px solid #ccc; padding: 10px;"></pre>
 
   <script>
-    // Simple synonym dictionary
-    const synonyms = {
-      "revolutionized": ["changed", "transformed", "altered"],
-      "approach": ["method", "way", "strategy"],
-      "problem-solving": ["trouble-shooting", "finding solutions"],
-      "decision-making": ["choosing", "deciding"],
-      "often": ["frequently", "commonly"],
-      "lacks": ["misses", "doesn't have"],
-      "natural": ["normal", "human-like", "organic"],
-      "flow": ["rhythm", "smoothness"],
-      "nuance": ["subtlety", "detail"],
-      "detectable": ["noticeable", "recognizable"],
-      "rewriting": ["rephrasing", "restating"],
-      "casual": ["relaxed", "informal"],
-      "help": ["assist", "aid"],
-      "bypass": ["avoid", "get around"],
-      "such": ["these kinds of", "those"]
+    // Phrase replacements for more natural paraphrasing
+    const phraseReplacements = [
+      ["Artificial intelligence", "AI"],
+      ["has revolutionized", "has changed a lot about"],
+      ["the way we approach", "how we handle"],
+      ["problem-solving", "solving problems"],
+      ["decision-making", "making decisions"],
+      ["AI-generated content", "content created by AI"],
+      ["often lacks", "usually misses"],
+      ["natural flow and subtlety", "a natural and subtle flow"],
+      ["human writing", "writing by people"],
+      ["can make it detectable", "might get caught"],
+      ["Rewriting this text", "Changing this text"],
+      ["to sound more casual and human", "to sound chill and human-like"],
+      ["can help bypass", "can trick"],
+      ["such detectors", "those detectors"]
+    ];
+
+    // Common contractions for casual tone
+    const contractions = {
+      "do not": "don't",
+      "does not": "doesn't",
+      "can not": "can't",
+      "will not": "won't",
+      "is not": "isn't",
+      "are not": "aren't",
+      "have not": "haven't",
+      "has not": "hasn't",
+      "I am": "I'm",
+      "you are": "you're",
+      "we are": "we're",
+      "they are": "they're",
+      "it is": "it's",
+      "that is": "that's",
+      "there is": "there's",
+      "let us": "let's",
     };
 
-    function getRandomSynonym(word) {
-      const lower = word.toLowerCase();
-      if (synonyms[lower]) {
-        const options = synonyms[lower];
-        return options[Math.floor(Math.random() * options.length)];
+    // Casual fillers to add randomly
+    const fillers = [
+      "you know", "like", "actually", "honestly", "basically", "well", "I mean"
+    ];
+
+    // Split text into sentences roughly
+    function splitSentences(text) {
+      // Simple sentence splitter by punctuation marks + space
+      return text.match(/[^.!?]+[.!?]*[\s]*/g) || [text];
+    }
+
+    // Randomly shuffle an array (Fisher-Yates shuffle)
+    function shuffleArray(arr) {
+      for (let i = arr.length -1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i +1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
       }
-      return word;
+      return arr;
+    }
+
+    // Replace phrases in the sentence with their paraphrased versions
+    function replacePhrases(sentence) {
+      let s = sentence;
+      phraseReplacements.forEach(([original, replacement]) => {
+        // Case insensitive replace, global
+        const regex = new RegExp(original, "gi");
+        s = s.replace(regex, match => {
+          // Match case: keep first letter case of original match
+          if (match[0] === match[0].toUpperCase()) {
+            return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+          }
+          return replacement;
+        });
+      });
+      return s;
+    }
+
+    // Apply contractions randomly to make it casual
+    function applyContractions(text) {
+      let t = text;
+      Object.entries(contractions).forEach(([full, cont]) => {
+        const regex = new RegExp("\\b" + full + "\\b", "gi");
+        if (Math.random() < 0.5) { // 50% chance to replace
+          t = t.replace(regex, match => {
+            // Keep case
+            if (match[0] === match[0].toUpperCase()) {
+              return cont.charAt(0).toUpperCase() + cont.slice(1);
+            }
+            return cont;
+          });
+        }
+      });
+      return t;
+    }
+
+    // Randomly add filler words in sentences
+    function addFillers(sentence) {
+      if (Math.random() < 0.4) { // 40% chance add filler
+        const filler = fillers[Math.floor(Math.random() * fillers.length)];
+        // Insert filler randomly near start or end
+        if (Math.random() < 0.5) {
+          return filler + ", " + sentence;
+        } else {
+          return sentence.trim() + ", " + filler;
+        }
+      }
+      return sentence;
+    }
+
+    // Occasionally join or split sentences for variation
+    function varySentenceLength(sentences) {
+      let varied = [];
+      let i = 0;
+      while (i < sentences.length) {
+        if (Math.random() < 0.3 && i < sentences.length -1) {
+          // Join current and next sentence
+          varied.push(sentences[i].trim().replace(/[.!?]*$/, "") + ", and " + sentences[i+1].trim());
+          i += 2;
+        } else {
+          varied.push(sentences[i]);
+          i++;
+        }
+      }
+      return varied;
     }
 
     function rewriteText() {
-      const input = document.getElementById("input").value;
-      if (!input.trim()) {
+      const input = document.getElementById("input").value.trim();
+      if (!input) {
         alert("Please paste some text.");
         return;
       }
-      // Split input into words
-      const words = input.split(/\b/); // Split but keep punctuation
-      const rewrittenWords = words.map(word => {
-        // Only replace words (skip punctuation and spaces)
-        if (/^\w+$/.test(word)) {
-          // 30% chance to replace word with synonym
-          if (Math.random() < 0.3) {
-            return getRandomSynonym(word);
-          }
-        }
-        return word;
-      });
 
-      // Add random casual filler phrase sometimes
-      let output = rewrittenWords.join("");
-      if (Math.random() < 0.4) {
-        output += " You know?";
+      // Split into sentences
+      let sentences = splitSentences(input);
+
+      // Replace phrases & contractions in each sentence
+      sentences = sentences.map(s => replacePhrases(s));
+      sentences = sentences.map(s => applyContractions(s));
+      sentences = sentences.map(s => addFillers(s));
+
+      // Vary sentence length
+      sentences = varySentenceLength(sentences);
+
+      // Shuffle sentence order slightly
+      if (sentences.length > 2 && Math.random() < 0.6) {
+        sentences = shuffleArray(sentences);
       }
-      if (Math.random() < 0.3) {
+
+      // Join sentences back into text
+      let output = sentences.join(" ");
+
+      // Add casual intro sometimes
+      if (Math.random() < 0.4) {
         output = "Honestly, " + output;
+      }
+
+      // Add casual outro sometimes
+      if (Math.random() < 0.3) {
+        output += ". You know?";
       }
 
       document.getElementById("output").textContent = output;
